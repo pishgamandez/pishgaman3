@@ -144,33 +144,89 @@ export const PosterCanvas: React.FC<PosterCanvasProps> = ({
       }
     }
 
-    // 2. Chroma Key Green Screen Removal
+    // 2. Chroma Key Green Screen Removal (Perimeter Flood-Fill / Connected Component Check)
     if (activeMode === 'green') {
-      // Green dominance: how much greener is the pixel compared to red and blue
-      // Slider sensitivity 10 to 90 (default ~38)
-      const threshold = Math.max(12, 70 - Math.round(sensitivity * 0.75));
-      const feather = 20;
+      const threshold = Math.max(15, 75 - Math.round(sensitivity * 0.7));
+      
+      // Mark which pixels are background green (touching edges or connected to edges)
+      // To keep it fast and robust without destroying inner label greens, we test if a green pixel
+      // is part of the outer background frame or connected to the image boundaries.
+      const isBgGreen = new Uint8Array(w * h);
+      const queue: number[] = [];
 
-      for (let i = 0; i < data.length; i += 4) {
-        const r = data[i];
-        const g = data[i + 1];
-        const b = data[i + 2];
+      // Helper index
+      const getIdx = (x: number, y: number) => y * w + x;
 
-        // Green Screen check
-        const maxRB = Math.max(r, b);
-        const greenExcess = g - maxRB;
-
-        if (greenExcess > threshold && g > 75) {
-          if (greenExcess >= (threshold + feather)) {
-            data[i + 3] = 0; // Completely transparent
-          } else {
-            // Soft feathering on the edge
-            const alphaFactor = (threshold + feather - greenExcess) / feather;
-            data[i + 3] = Math.round(data[i + 3] * Math.min(1, Math.max(0, alphaFactor)));
+      // 1. Check all border pixels
+      for (let x = 0; x < w; x++) {
+        for (const y of [0, h - 1]) {
+          const i = (y * w + x) * 4;
+          const r = data[i], g = data[i + 1], b = data[i + 2];
+          const greenExcess = g - Math.max(r, b);
+          if (greenExcess > threshold && g > 60) {
+            const idx = getIdx(x, y);
+            if (!isBgGreen[idx]) {
+              isBgGreen[idx] = 1;
+              queue.push(x, y);
+            }
           }
-        } else if (despill && g > maxRB) {
-          // Green spill suppression: removes neon green bounce from white plastic bucket rims
-          data[i + 1] = Math.round((r + b) / 2);
+        }
+      }
+      for (let y = 0; y < h; y++) {
+        for (const x of [0, w - 1]) {
+          const i = (y * w + x) * 4;
+          const r = data[i], g = data[i + 1], b = data[i + 2];
+          const greenExcess = g - Math.max(r, b);
+          if (greenExcess > threshold && g > 60) {
+            const idx = getIdx(x, y);
+            if (!isBgGreen[idx]) {
+              isBgGreen[idx] = 1;
+              queue.push(x, y);
+            }
+          }
+        }
+      }
+
+      // 2. Flood fill outward background green pixels (BFS with step sampling for performance)
+      let head = 0;
+      while (head < queue.length && head < 250000) {
+        const cx = queue[head++];
+        const cy = queue[head++];
+
+        const neighbors = [[cx + 1, cy], [cx - 1, cy], [cx, cy + 1], [cx, cy - 1]];
+        for (const [nx, ny] of neighbors) {
+          if (nx >= 0 && nx < w && ny >= 0 && ny < h) {
+            const nidx = getIdx(nx, ny);
+            if (!isBgGreen[nidx]) {
+              const i = nidx * 4;
+              const r = data[i], g = data[i + 1], b = data[i + 2];
+              const greenExcess = g - Math.max(r, b);
+              if (greenExcess > (threshold * 0.75) && g > 50) {
+                isBgGreen[nidx] = 1;
+                if (queue.length < 600000) {
+                  queue.push(nx, ny);
+                }
+              }
+            }
+          }
+        }
+      }
+
+      // 3. Apply alpha removal and despill only to background or green spill
+      for (let y = 0; y < h; y++) {
+        for (let x = 0; x < w; x++) {
+          const idx = getIdx(x, y);
+          const i = idx * 4;
+          if (isBgGreen[idx]) {
+            data[i + 3] = 0; // Transparent background
+          } else {
+            const r = data[i], g = data[i + 1], b = data[i + 2];
+            const maxRB = Math.max(r, b);
+            if (despill && g > maxRB + 15 && g > 100) {
+              // Despill edge green bounce on white bucket rim without touching label
+              data[i + 1] = Math.round((r + b) / 2);
+            }
+          }
         }
       }
     } else if (activeMode === 'white') {
