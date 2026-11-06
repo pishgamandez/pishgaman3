@@ -58,12 +58,19 @@ export interface PosterConfig {
   // Call to action & Footer
   callToAction: string;
   contactInfo: string;
-  volumeTag: string; // e.g. "حجم ۶ لیتر / وزن بالا"
+  volumeTag: string;
   
   // Style theme
-  theme: 'corteva' | 'syngenta' | 'yara' | 'haifa-dark' | 'emerald-bio' | 'gold-harvest';
+  theme: 'corteva' | 'syngenta' | 'yara' | 'haifa-dark' | 'bayer-lab' | 'precision-drone';
   primaryColor: string;
   accentColor: string;
+}
+
+export interface DosageItem {
+  crop: string;
+  method: string;
+  timing?: string;
+  rate: string;
 }
 
 export interface CropGuideItem {
@@ -83,4 +90,54 @@ export interface ResearchSection {
   summary: string;
   details: string[];
   scientificRef: string;
+}
+
+export interface AcademicCitation {
+  title: string;
+  authors: string;
+  journal: string;
+  year: number;
+  doi?: string;
+}
+
+export interface ScientificProfile {
+  chemicalClass: string;
+  activeIngredients: string;
+  phRange: string;
+  ecValue?: string;
+  modeOfAction: string;
+  iranSoilSynergy: string;
+  tankMixCompatibility: string;
+  academicReferences: AcademicCitation[];
+}
+
+export interface PishgamanProduct {
+  id: string;
+  slug: string;
+  nameFa: string;
+  nameEn: string;
+  category: 'humic-organic' | 'biostimulant' | 'macro-micro' | 'gels-phosphate' | 'soil-water' | 'custom';
+  categoryTitle: string;
+  appearance: string;
+  packaging: string;
+  badge: string;
+  tagline: string;
+  description: string;
+  benefits: string[];
+  dosageTable: DosageItem[];
+  imageUrl: string;
+  scientificProfile: ScientificProfile;
+  isCustom?: boolean;
+}
+
+export interface CopyAngle {
+  id: string;
+  title: string;
+  angleName: string;
+  description: string;
+  hook: string;
+  body: string;
+  callToAction: string;
+  hashtags: string[];
+  recommendedFormat: string;
 }

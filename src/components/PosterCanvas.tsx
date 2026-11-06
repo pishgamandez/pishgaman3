@@ -248,23 +248,36 @@ export const PosterCanvas: React.FC<PosterCanvasProps> = ({
         ctx.fillRect(0, 0, width, height);
       }
     } else {
-      // Custom gradient background
+      // Custom gradient background based on theme
       const grad = ctx.createRadialGradient(
         width * 0.5, height * 0.35, 100,
         width * 0.5, height * 0.5, Math.max(width, height)
       );
-      if (config.theme === 'syngenta' || config.theme === 'gold-harvest') {
-        grad.addColorStop(0, '#78350f');
-        grad.addColorStop(0.5, '#291305');
-        grad.addColorStop(1, '#0b0804');
+      if (config.theme === 'syngenta') {
+        grad.addColorStop(0, '#593206');
+        grad.addColorStop(0.45, '#261403');
+        grad.addColorStop(1, '#0c0702');
       } else if (config.theme === 'haifa-dark') {
-        grad.addColorStop(0, '#064e3b');
-        grad.addColorStop(0.45, '#022c22');
-        grad.addColorStop(1, '#050b14');
+        grad.addColorStop(0, '#1a2230');
+        grad.addColorStop(0.45, '#0e131b');
+        grad.addColorStop(1, '#05070a');
+      } else if (config.theme === 'corteva') {
+        grad.addColorStop(0, '#062942');
+        grad.addColorStop(0.45, '#031726');
+        grad.addColorStop(1, '#010a12');
+      } else if (config.theme === 'bayer-lab') {
+        grad.addColorStop(0, '#063547');
+        grad.addColorStop(0.45, '#031c26');
+        grad.addColorStop(1, '#010e14');
+      } else if (config.theme === 'precision-drone') {
+        grad.addColorStop(0, '#0d382b');
+        grad.addColorStop(0.45, '#061f18');
+        grad.addColorStop(1, '#020d0a');
       } else {
-        grad.addColorStop(0, '#04382c');
-        grad.addColorStop(0.5, '#021a14');
-        grad.addColorStop(1, '#030806');
+        // yara or default
+        grad.addColorStop(0, '#064234');
+        grad.addColorStop(0.45, '#022119');
+        grad.addColorStop(1, '#010e0a');
       }
       ctx.fillStyle = grad;
       ctx.fillRect(0, 0, width, height);

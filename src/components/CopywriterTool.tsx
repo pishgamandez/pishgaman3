@@ -8,183 +8,218 @@ import {
   MessageSquare,
   Copy,
   Check,
-  Send,
   Sparkles,
-  FileText,
   Share2,
-  Instagram,
-  PhoneCall
+  Video,
+  TrendingUp,
+  AlertTriangle,
+  FlaskConical,
+  DollarSign,
+  Tag
 } from 'lucide-react';
-import { PISHGAMAN_PRODUCT_SPECS } from '../data/researchData';
+import { PishgamanProduct } from '../types';
+import { generateCopyAnglesForProduct } from '../services/aiGenerator';
 
-export const CopywriterTool: React.FC = () => {
-  const [tone, setTone] = useState<'scientific' | 'marketing' | 'sms' | 'story'>('marketing');
-  const [targetCrop, setTargetCrop] = useState<string>('پسته و باغات');
-  const [copied, setCopied] = useState(false);
+interface CopywriterToolProps {
+  product: PishgamanProduct;
+}
 
-  const getGeneratedCopy = () => {
-    if (tone === 'marketing') {
-      return `🌾 ریشه‌زایی فولادی و افزایش چشمگیر تناژ با تایگر های‌پی (TIGER High P) پیشگامان!
+export const CopywriterTool: React.FC<CopywriterToolProps> = ({ product }) => {
+  const [seed, setSeed] = useState(0);
+  const [activeAngleIndex, setActiveAngleIndex] = useState(0);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
-آیا از رسوب فسفات در خاک‌های آهکی و شور خسته شده‌اید؟
-بیش از ۸۰٪ کودهای فسفاته معمولی به محض ورود به خاک قفل می‌شوند، اما فرمولاسیون انقلابی شرکت «پرواز نهاده پیشگامان» جذب ۱۰۰٪ برگی و ریشه‌ای را ممکن ساخته است!
+  const angles = generateCopyAnglesForProduct(product, seed);
+  const currentAngle = angles[activeAngleIndex] || angles[0];
 
-🌟 چرا کشاورزان پیشرو تایگر های‌پی را انتخاب می‌کنند؟
-✅ تحریک انفجاری ریشه‌های موئین در کمتر از ۷۲ ساعت
-✅ بدون رسوب در لوله‌های آبیاری و نوار تیپ
-✅ کاملاً فاقد کلر، سدیم و فلزات سنگین
-✅ افزایش باروری خوشه‌ها، کاهش شدید پوکی و درشت شدن محصول
-✅ ایده‌آل برای ${targetCrop}
-
-📦 بسته‌بندی مقاوم ۶ لیتری با غلظت سنگین صنعتی
-🚚 ارسال فوری به سراسر کشور با ضمانت اصالت
-📞 جهت مشاوره رایگان با کارشناسان پیشگامان و استعلام قیمت دایرکت پیام دهید یا تماس بگیرید.
-
-#کشاورزی_مدرن #تایگر_پیشگامان #کود_فسفات #ریشه_زایی #پسته #گندم #زعفران #صیفی_جات #کود_مایع #باغداری #نهاده_های_کشاورزی`;
-    }
-
-    if (tone === 'scientific') {
-      return `🔬 گزارش فنی اگروشیمی: مکانیزم رهایش پیوسته و جلوگیری از تثبیت فسفر
-
-محصول: TIGER High P (سوسپانسیون غلیظ فسفاته)
-تولیدکننده: شرکت پرواز نهاده پیشگامان
-
-در خاک‌های قلیایی و آهکی حوزه کشاورزی کشور (pH > 7.8)، پدیده Phosphate Fixation بزرگ‌ترین مانع بیولوژیک در راندمان کوددهی است.
-تایگر های‌پی پیشگامان با فناوری کلاتاسیون ارگانیک و خاصیت بافری اسیدی، از پیوند یون‌های ارتوکسید فسفات با کربنات کلسیم ممانعت به عمل می‌آورد.
-
-نتایج فارم تست:
-- افزایش ۳۸٪ چگالی تارهای کشنده در فاز رویشی
-- ارتقای شاخص انتقال انرژی سلولی (ATP synthesis)
-- سازگاری کامل با آب‌های با EC و بی‌کربنات بالا
-- صفر درصد خطر سوختگی روزنه‌ها در محلول‌پاشی برگی (Foliar Application)
-
-دوز توصیه شده برای ${targetCrop}: ۲ تا ۳ لیتر در هزار لیتر آب / ۴ تا ۶ لیتر در هکتار کودآبیاری.`;
-    }
-
-    if (tone === 'sms') {
-      return `پادشاه ریشه‌زایی در باغات و مزارع!
-کود فسفر بالای TIGER High P پیشگامان؛
-جذب ۱۰۰٪ بدون رسوب در خاک‌های آهکی و بدون کلر.
-افزایش باردهی و تناژ تضمینی ${targetCrop}.
-سطل ۶ لیتری اصلی.
-مشاوره و خرید: شرکت پرواز نهاده پیشگامان`;
-    }
-
-    // story
-    return `⚡️ استوری اینستاگرام:
-اسلاید ۱: «چرا پسته و گندم امسال به پتاس و فسفر سنتی جواب نمیده؟»
-اسلاید ۲: خاک آهکی فسفر رو قفل کرده! راهکار چیه؟ 👇
-اسلاید ۳: تصویر سطل TIGER High P پیشگامان + تگ «انفجار ریشه‌زایی در اعماق خاک»
-اسلاید ۴: لینک استعلام قیمت و دایرکت فروشگاه شرکت پیشگامان!`;
+  const handleCopyText = (text: string, id: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 2000);
   };
 
-  const currentText = getGeneratedCopy();
-
-  const handleCopy = () => {
-    navigator.clipboard.writeText(currentText);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2200);
+  const getAngleIcon = (index: number) => {
+    switch (index) {
+      case 0:
+        return TrendingUp;
+      case 1:
+        return AlertTriangle;
+      case 2:
+        return FlaskConical;
+      case 3:
+        return DollarSign;
+      case 4:
+        return Video;
+      default:
+        return MessageSquare;
+    }
   };
+
+  const fullCopyText = `${currentAngle.hook}\n\n${currentAngle.body}\n\n📢 ${currentAngle.callToAction}\n\n${currentAngle.hashtags.join(' ')}`;
 
   return (
-    <div className="p-6 sm:p-7 rounded-3xl bg-slate-900/80 border border-slate-800 space-y-6">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+    <div className="space-y-6">
+      {/* Header bar */}
+      <div className="flex flex-wrap items-center justify-between gap-4 bg-slate-900 border border-slate-800 p-5 rounded-3xl">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-purple-600/20 text-purple-400 flex items-center justify-center border border-purple-500/30">
-            <MessageSquare className="w-5 h-5" />
+          <div className="w-12 h-12 rounded-2xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center">
+            <MessageSquare className="w-6 h-6" />
           </div>
           <div>
-            <h3 className="text-base sm:text-lg font-bold text-white">
-              دستیار هوشمند نگارش کپشن و تبلیغات کشاورزی
-            </h3>
+            <h2 className="text-lg font-black text-white">
+              سیستم تولید خودکار کپشن و محتوای شبکه‌های اجتماعی
+            </h2>
             <p className="text-xs text-slate-400">
-              تولید اتوماتیک متن پست اینستاگرام، کانال‌های کشاورزی، پیامک فروشگاهی و کاتالوگ
+              ۵ زاویه بازاریابی هوشمند برای محصول:{' '}
+              <span className="font-bold text-emerald-400">
+                {product.nameFa} ({product.nameEn})
+              </span>
             </p>
           </div>
         </div>
 
+        {/* Re-roll inspiration button */}
         <button
-          onClick={handleCopy}
-          className="px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold flex items-center gap-2 shadow-lg shadow-purple-600/30 transition-all cursor-pointer"
+          onClick={() => setSeed((s) => s + 1)}
+          className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-black text-xs flex items-center gap-2 shadow-lg shadow-indigo-600/25 active:scale-95 transition-all cursor-pointer"
         >
-          {copied ? <Check className="w-4 h-4 text-emerald-300" /> : <Copy className="w-4 h-4" />}
-          <span>{copied ? 'متن کپی شد!' : 'کپی کل متن در حافظه'}</span>
+          <Sparkles className="w-4 h-4" />
+          <span>تولید زوایای نو و لحن‌های تازه</span>
         </button>
       </div>
 
-      {/* Selectors */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div>
-          <label className="block text-xs font-semibold text-slate-300 mb-2">لحن و فرمت متن:</label>
-          <div className="grid grid-cols-2 gap-2">
+      {/* Angle Selector Tabs */}
+      <div className="grid grid-cols-1 sm:grid-cols-5 gap-2.5">
+        {angles.map((angle, idx) => {
+          const Icon = getAngleIcon(idx);
+          const isSelected = activeAngleIndex === idx;
+          return (
             <button
-              onClick={() => setTone('marketing')}
-              className={`py-2 px-3 rounded-xl text-xs font-medium border transition-all ${
-                tone === 'marketing'
-                  ? 'bg-purple-600 border-purple-500 text-white'
-                  : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white'
+              key={angle.id}
+              onClick={() => setActiveAngleIndex(idx)}
+              className={`p-3 rounded-2xl border text-right transition-all flex flex-col justify-between cursor-pointer ${
+                isSelected
+                  ? 'bg-indigo-950/40 border-indigo-500 shadow-lg shadow-indigo-500/10'
+                  : 'bg-slate-900/60 border-slate-800 hover:border-slate-700 hover:bg-slate-800/40'
               }`}
             >
-              کپشن تبلیغاتی اینستاگرام
+              <div className="flex items-center justify-between mb-2">
+                <Icon
+                  className={`w-4 h-4 ${isSelected ? 'text-indigo-400' : 'text-slate-400'}`}
+                />
+                <span className="text-[10px] font-mono text-slate-500">#{idx + 1}</span>
+              </div>
+              <span
+                className={`text-xs font-bold leading-snug ${
+                  isSelected ? 'text-white' : 'text-slate-300'
+                }`}
+              >
+                {angle.angleName}
+              </span>
             </button>
+          );
+        })}
+      </div>
+
+      {/* Main Copy Viewer & Details */}
+      <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 shadow-2xl space-y-6">
+        {/* Angle Meta info */}
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-4">
+          <div>
+            <h3 className="text-base font-black text-white">{currentAngle.title}</h3>
+            <p className="text-xs text-slate-400 mt-0.5">{currentAngle.description}</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold px-3 py-1 rounded-xl bg-slate-950 text-indigo-300 border border-indigo-500/30">
+              فرمت پیشنهادی: {currentAngle.recommendedFormat}
+            </span>
             <button
-              onClick={() => setTone('scientific')}
-              className={`py-2 px-3 rounded-xl text-xs font-medium border transition-all ${
-                tone === 'scientific'
-                  ? 'bg-purple-600 border-purple-500 text-white'
-                  : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white'
+              onClick={() => handleCopyText(fullCopyText, currentAngle.id)}
+              className={`px-4 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all cursor-pointer ${
+                copiedId === currentAngle.id
+                  ? 'bg-emerald-500 text-slate-950'
+                  : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-600/30'
               }`}
             >
-              متن علمی و کاتالوگ فنی
-            </button>
-            <button
-              onClick={() => setTone('sms')}
-              className={`py-2 px-3 rounded-xl text-xs font-medium border transition-all ${
-                tone === 'sms'
-                  ? 'bg-purple-600 border-purple-500 text-white'
-                  : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white'
-              }`}
-            >
-              پیامک کوتاه تبلیغاتی (SMS)
-            </button>
-            <button
-              onClick={() => setTone('story')}
-              className={`py-2 px-3 rounded-xl text-xs font-medium border transition-all ${
-                tone === 'story'
-                  ? 'bg-purple-600 border-purple-500 text-white'
-                  : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white'
-              }`}
-            >
-              سناریوی استوری تعاملی
+              {copiedId === currentAngle.id ? (
+                <>
+                  <Check className="w-4 h-4" />
+                  <span>کپی شد!</span>
+                </>
+              ) : (
+                <>
+                  <Copy className="w-4 h-4" />
+                  <span>کپی کل متن و هشتگ‌ها</span>
+                </>
+              )}
             </button>
           </div>
         </div>
 
-        <div>
-          <label className="block text-xs font-semibold text-slate-300 mb-2">محصول هدف در متن:</label>
-          <select
-            value={targetCrop}
-            onChange={(e) => setTargetCrop(e.target.value)}
-            className="w-full bg-slate-950 text-white text-xs px-3.5 py-2.5 rounded-xl border border-slate-800 focus:outline-none focus:border-purple-500 cursor-pointer"
-          >
-            <option value="پسته و باغات خشکبار">باغات پسته و خشکبار</option>
-            <option value="گندم و جو آبی و دیم">مزارع گندم و جو</option>
-            <option value="زعفران و پیازهای زراعی">زعفران و گیاهان دارویی</option>
-            <option value="صیفی‌جات و محصولات گلخانه‌ای">صیفی‌جات و گلخانه</option>
-            <option value="سیب‌زمینی و پیاز">سیب‌زمینی و پیاز غده‌ای</option>
-            <option value="مرکبات و باغات انار">مرکبات، انار و باغات میوه</option>
-          </select>
+        {/* 1. The Hook */}
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-black text-amber-400 uppercase tracking-wider">
+              قلاب جذب مخاطب (Hook / خط اول):
+            </span>
+            <button
+              onClick={() => handleCopyText(currentAngle.hook, `${currentAngle.id}_hook`)}
+              className="text-[11px] text-slate-400 hover:text-white flex items-center gap-1 cursor-pointer"
+            >
+              <Copy className="w-3 h-3" />
+              <span>کپی قلاب</span>
+            </button>
+          </div>
+          <div className="p-3.5 rounded-2xl bg-slate-950 border border-amber-500/30 text-amber-200 font-bold text-sm leading-relaxed">
+            {currentAngle.hook}
+          </div>
         </div>
-      </div>
 
-      {/* Copy Output Area */}
-      <div className="relative">
-        <textarea
-          readOnly
-          value={currentText}
-          rows={12}
-          className="w-full bg-slate-950 text-slate-200 text-xs sm:text-sm p-4 rounded-2xl border border-slate-800 focus:outline-none leading-relaxed font-mono select-all"
-        />
+        {/* 2. The Body */}
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-black text-indigo-300 uppercase tracking-wider">
+              بدنه و پیام اصلی (Body Content):
+            </span>
+            <button
+              onClick={() => handleCopyText(currentAngle.body, `${currentAngle.id}_body`)}
+              className="text-[11px] text-slate-400 hover:text-white flex items-center gap-1 cursor-pointer"
+            >
+              <Copy className="w-3 h-3" />
+              <span>کپی بدنه</span>
+            </button>
+          </div>
+          <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 text-slate-200 text-xs sm:text-sm leading-relaxed whitespace-pre-wrap font-sans">
+            {currentAngle.body}
+          </div>
+        </div>
+
+        {/* 3. Call to Action */}
+        <div className="space-y-1.5">
+          <span className="text-xs font-black text-emerald-400 uppercase tracking-wider">
+            دعوت به اقدام (Call To Action):
+          </span>
+          <div className="p-3 rounded-2xl bg-emerald-950/20 border border-emerald-500/30 text-emerald-300 text-xs font-semibold">
+            {currentAngle.callToAction}
+          </div>
+        </div>
+
+        {/* 4. Hashtags */}
+        <div className="space-y-2">
+          <span className="text-xs font-black text-slate-400 uppercase tracking-wider">
+            هشتگ‌های تخصصی و پربازدید:
+          </span>
+          <div className="flex flex-wrap gap-1.5">
+            {currentAngle.hashtags.map((tag, i) => (
+              <span
+                key={i}
+                className="text-[11px] font-mono px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-800 text-slate-400"
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );

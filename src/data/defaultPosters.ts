@@ -370,7 +370,7 @@ export const POSTER_TEMPLATES: PosterConfig[] = [
     contactInfo: 'شرکت پرواز نهاده پیشگامان | ارتباط با واحد فروش',
     volumeTag: 'بسته‌بندی ۶ لیتری با دوام بالا',
     
-    theme: 'emerald-bio',
+    theme: 'yara',
     primaryColor: '#0d9488',
     accentColor: '#2dd4bf'
   },
@@ -422,7 +422,7 @@ export const POSTER_TEMPLATES: PosterConfig[] = [
     contactInfo: 'ارسال به سراسر کشور | واحد فروش عمده',
     volumeTag: 'بسته‌بندی ۶ لیتری صنعتی',
     
-    theme: 'emerald-bio',
+    theme: 'yara',
     primaryColor: '#0d9488',
     accentColor: '#2dd4bf'
   },

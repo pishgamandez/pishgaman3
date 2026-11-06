@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Wand2,
   BookOpen,
@@ -19,33 +19,63 @@ import {
   Phone,
   CheckCircle2,
   Sprout,
-  Image as ImageIcon
+  Image as ImageIcon,
+  ExternalLink,
+  Plus,
+  RefreshCw,
+  Droplet
 } from 'lucide-react';
-import { PosterConfig } from './types';
-import { POSTER_TEMPLATES } from './data/defaultPosters';
+import { PishgamanProduct, PosterConfig } from './types';
+import { PISHGAMAN_CATALOG } from './data/pishgamanCatalog';
+import { generatePosterConfigForProduct } from './services/aiGenerator';
+import { ProductSelector } from './components/ProductSelector';
 import { PosterStudio } from './components/PosterStudio';
-import { TemplateGallery } from './components/TemplateGallery';
-import { ResearchDossier } from './components/ResearchDossier';
 import { CopywriterTool } from './components/CopywriterTool';
-import { AutoResearcher } from './components/AutoResearcher';
-
-// Optimal Green Screen color for best separation (high contrast to most products)
-export const BG_REMOVE_GREEN_COLOR = '#00FF41'; 
+import { ResearchDossier } from './components/ResearchDossier';
+import { DosageGuide } from './components/DosageGuide';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'studio' | 'gallery' | 'research' | 'copywriter' | 'researcher'>('studio');
-// ... (rest of App component updated with researcher tab)
-  const [currentConfig, setCurrentConfig] = useState<PosterConfig>(POSTER_TEMPLATES[0]);
+  const [productsList, setProductsList] = useState<PishgamanProduct[]>(PISHGAMAN_CATALOG);
+  
+  // Default to Tiger High P or first product
+  const defaultInitialProd =
+    productsList.find((p) => p.slug === 'tiger-p') || productsList[0];
+  const [selectedProduct, setSelectedProduct] = useState<PishgamanProduct>(defaultInitialProd);
 
-  const handleSelectTemplateFromGallery = (template: PosterConfig) => {
-    setCurrentConfig({ ...template });
-    setActiveTab('studio');
+  const [activeTab, setActiveTab] = useState<'poster' | 'copywriter' | 'research' | 'dosage'>('poster');
+  const [seed, setSeed] = useState<number>(0);
+  const [posterConfig, setPosterConfig] = useState<PosterConfig>(() =>
+    generatePosterConfigForProduct(defaultInitialProd, { seed: 0 })
+  );
+
+  // When selected product changes or seed changes, update the poster config
+  const handleSelectProduct = (product: PishgamanProduct) => {
+    setSelectedProduct(product);
+    setPosterConfig(generatePosterConfigForProduct(product, { seed: 0 }));
+  };
+
+  const handleAddCustomProduct = (newProduct: PishgamanProduct) => {
+    setProductsList((prev) => [newProduct, ...prev]);
+    setSelectedProduct(newProduct);
+    setPosterConfig(generatePosterConfigForProduct(newProduct, { seed: 0 }));
+  };
+
+  const handleReroll = () => {
+    const nextSeed = seed + 1;
+    setSeed(nextSeed);
+    setPosterConfig(
+      generatePosterConfigForProduct(selectedProduct, {
+        seed: nextSeed,
+        aspectRatio: posterConfig.aspectRatio,
+        theme: posterConfig.theme
+      })
+    );
   };
 
   return (
     <div className="min-h-screen bg-[#060a12] text-slate-100 flex flex-col selection:bg-emerald-500/30 selection:text-emerald-200">
-      {/* Top Navbar with Pishgaman Branding */}
-      <header className="border-b border-slate-800/80 bg-[#090e1a]/90 backdrop-blur-md sticky top-0 z-50">
+      {/* Top Navbar with Pishgaman Official Branding */}
+      <header className="border-b border-slate-800/80 bg-[#090e1a]/95 backdrop-blur-md sticky top-0 z-40 shadow-xl">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 flex items-center justify-between">
           <div className="flex items-center gap-3.5">
             {/* Logo Badge */}
@@ -60,137 +90,148 @@ export default function App() {
                 <span className="font-black text-lg tracking-tight text-white">
                   پرواز نهاده پیشگامان
                 </span>
-                <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
-                  TIGER High P
+                <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                  {selectedProduct.nameFa} ({selectedProduct.nameEn})
                 </span>
               </div>
               <p className="text-xs text-slate-400">
-                پلتفرم هوشمند تبلیغات بین‌المللی و تحقیقات تخصصی فسفات کشاورزی
+                پلتفرم هوشمند اتوماتیک تبلیغات بین‌المللی، تولید پوستر، کپشن، مقالات علمی و رفرنس برای تمام محصولات
               </p>
             </div>
           </div>
 
-          {/* Quick Info & Status */}
-          <div className="hidden lg:flex items-center gap-4 text-xs">
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300">
-              <Shield className="w-3.5 h-3.5 text-emerald-400" />
-              <span>حفظ ۱۰۰٪ مشخصات فیزیکی محصول</span>
-            </div>
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300">
-              <Award className="w-3.5 h-3.5 text-amber-400" />
-              <span>کیفیت در حد Corteva & Syngenta</span>
-            </div>
+          {/* Quick Links & Live Site */}
+          <div className="flex items-center gap-3 text-xs">
+            <a
+              href="https://pishgamandez.github.io/pishgaman/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 transition-colors"
+            >
+              <ExternalLink className="w-3.5 h-3.5 text-emerald-400" />
+              <span>وبسایت اصلی پیشگامان</span>
+            </a>
+
+            <button
+              onClick={handleReroll}
+              className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-emerald-500 hover:from-amber-400 hover:to-emerald-400 text-slate-950 font-black flex items-center gap-1.5 shadow-md shadow-amber-500/20 active:scale-95 transition-all cursor-pointer"
+            >
+              <Sparkles className="w-4 h-4" />
+              <span>تولید ایده جدید</span>
+            </button>
           </div>
         </div>
       </header>
 
-      {/* Main Tab Navigation Bar */}
-      <div className="border-b border-slate-800/60 bg-[#090e1a]/60">
+      {/* Product Selector Carousel (16 Official Products + Custom Upload) */}
+      <ProductSelector
+        products={productsList}
+        selectedProduct={selectedProduct}
+        onSelectProduct={handleSelectProduct}
+        onAddCustomProduct={handleAddCustomProduct}
+      />
+
+      {/* Main Studio Navigation Tabs */}
+      <div className="border-b border-slate-800/80 bg-[#090e1a]/80 sticky top-18 z-30 backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-2 overflow-x-auto py-3 scrollbar-none">
+          <div className="flex items-center gap-2 overflow-x-auto py-2.5 scrollbar-none">
             <button
-              onClick={() => setActiveTab('studio')}
-              className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all shrink-0 cursor-pointer ${
-                activeTab === 'studio'
-                  ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/30 border border-emerald-500'
+              onClick={() => setActiveTab('poster')}
+              className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all shrink-0 cursor-pointer ${
+                activeTab === 'poster'
+                  ? 'bg-emerald-500 text-slate-950 font-black shadow-lg shadow-emerald-500/20'
                   : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
               }`}
             >
               <Sliders className="w-4 h-4" />
-              <span>استودیوی ساخت پوستر اتوماتیک</span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab('gallery')}
-              className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all shrink-0 cursor-pointer ${
-                activeTab === 'gallery'
-                  ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/30 border border-emerald-500'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-              }`}
-            >
-              <LayoutGrid className="w-4 h-4" />
-              <span>گالری پوسترهای برتر بین‌المللی ({POSTER_TEMPLATES.length})</span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab('research')}
-              className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all shrink-0 cursor-pointer ${
-                activeTab === 'research'
-                  ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/30 border border-emerald-500'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-              }`}
-            >
-              <FlaskConical className="w-4 h-4" />
-              <span>تحقیقات جامع فسفات و مزایای TIGER</span>
+              <span>پوستر تبلیغاتی بین‌المللی</span>
             </button>
 
             <button
               onClick={() => setActiveTab('copywriter')}
-              className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all shrink-0 cursor-pointer ${
+              className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all shrink-0 cursor-pointer ${
                 activeTab === 'copywriter'
-                  ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/30 border border-emerald-500'
+                  ? 'bg-emerald-500 text-slate-950 font-black shadow-lg shadow-emerald-500/20'
                   : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
               }`}
             >
               <MessageSquare className="w-4 h-4" />
-              <span>تولید متن تبلیغاتی و کپشن</span>
+              <span>کپشن و سناریوی شبکه‌های اجتماعی (۵ زاویه)</span>
             </button>
 
             <button
-              onClick={() => setActiveTab('researcher')}
-              className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all shrink-0 cursor-pointer ${
-                activeTab === 'researcher'
-                  ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/30 border border-emerald-500'
+              onClick={() => setActiveTab('research')}
+              className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all shrink-0 cursor-pointer ${
+                activeTab === 'research'
+                  ? 'bg-emerald-500 text-slate-950 font-black shadow-lg shadow-emerald-500/20'
                   : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
               }`}
             >
-              <Wand2 className="w-4 h-4" />
-              <span>تحقیق‌گر هوشمند محصولات جدید</span>
+              <BookOpen className="w-4 h-4" />
+              <span>مقاله پژوهشی و رفرنس علمی دانشگاهی</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('dosage')}
+              className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all shrink-0 cursor-pointer ${
+                activeTab === 'dosage'
+                  ? 'bg-emerald-500 text-slate-950 font-black shadow-lg shadow-emerald-500/20'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+              }`}
+            >
+              <Droplet className="w-4 h-4" />
+              <span>کاتالوگ فنی و راهنمای مصرف</span>
             </button>
           </div>
         </div>
       </div>
 
-      {/* Main View Container */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full">
-        {activeTab === 'studio' && (
+      {/* Main Content Area */}
+      <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+        {activeTab === 'poster' && (
           <PosterStudio
-            initialConfig={currentConfig}
-            onApplyTemplate={(tmpl) => setCurrentConfig(tmpl)}
+            product={selectedProduct}
+            config={posterConfig}
+            onChangeConfig={setPosterConfig}
+            onReroll={handleReroll}
           />
         )}
 
-        {activeTab === 'gallery' && (
-          <TemplateGallery
-            onSelectTemplate={handleSelectTemplateFromGallery}
-          />
-        )}
+        {activeTab === 'copywriter' && <CopywriterTool product={selectedProduct} />}
 
-        {activeTab === 'research' && (
-          <ResearchDossier />
-        )}
+        {activeTab === 'research' && <ResearchDossier product={selectedProduct} />}
 
-        {activeTab === 'copywriter' && (
-          <CopywriterTool />
-        )}
-
-        {activeTab === 'researcher' && (
-          <AutoResearcher />
-        )}
+        {activeTab === 'dosage' && <DosageGuide product={selectedProduct} />}
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-slate-800/80 bg-[#090e1a] py-6 mt-12 text-xs text-slate-400">
+      <footer className="border-t border-slate-800/80 bg-[#070b14] py-8 text-xs text-slate-500">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <span className="font-bold text-slate-200">شرکت پرواز نهاده پیشگامان</span>
-            <span>-</span>
-            <span>تولیدکننده کودهای تخصصی کشاورزی و محرک‌های رشد گیاهی</span>
+            <Sprout className="w-4 h-4 text-emerald-500" />
+            <span className="font-bold text-slate-300">
+              شرکت پیشگامان پایدار فلات نیک / برند پرواز نهاده
+            </span>
+            <span>—</span>
+            <span>استودیوی یکپارچه هوشمند تبلیغات و پژوهش‌های کشاورزی</span>
           </div>
-          <div className="flex items-center gap-4 text-slate-500">
-            <span>کود سوسپانسیون تایگر های‌پی (TIGER High P)</span>
-            <span>•</span>
-            <span className="text-emerald-400 font-semibold">بسته‌بندی رسمی ۶ لیتری</span>
+          <div className="flex items-center gap-4">
+            <a
+              href="https://pishgamandez.github.io/pishgaman/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-emerald-400 transition-colors"
+            >
+              کاتالوگ رسمی شرکت
+            </a>
+            <a
+              href="https://pishgamandez.github.io/pishgaman3/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-emerald-400 transition-colors"
+            >
+              نسخه آنلاین گیت‌هاب پیجز
+            </a>
           </div>
         </div>
       </footer>
