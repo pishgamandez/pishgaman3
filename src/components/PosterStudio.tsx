@@ -26,7 +26,7 @@ import {
 } from 'lucide-react';
 import { PosterConfig, AspectRatio } from '../types';
 import { PosterCanvas } from './PosterCanvas';
-import { POSTER_TEMPLATES, DEFAULT_PRODUCT_IMG } from '../data/defaultPosters';
+import { POSTER_TEMPLATES, DEFAULT_PRODUCT_IMG, GREEN_PRODUCT_IMG, WHITE_PRODUCT_IMG } from '../data/defaultPosters';
 
 interface PosterStudioProps {
   initialConfig?: PosterConfig;
@@ -288,9 +288,9 @@ ${config.features.map(f => `✔️ ${f}`).join('\n')}
           {/* TAB 1: PRODUCT SETTINGS */}
           {activeTab === 'product' && (
             <div className="space-y-4">
-              <div className="p-3.5 rounded-xl bg-slate-950/60 border border-slate-800">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-xs font-bold text-white">تصویر محصول</span>
+              <div className="p-3.5 rounded-xl bg-slate-950/60 border border-slate-800 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-white">انتخاب و آپلود تصویر محصول</span>
                   <button
                     onClick={handleResetProduct}
                     className="text-[11px] text-emerald-400 hover:text-emerald-300 flex items-center gap-1 cursor-pointer"
@@ -300,32 +300,67 @@ ${config.features.map(f => `✔️ ${f}`).join('\n')}
                   </button>
                 </div>
 
-                <div className="flex items-center gap-3">
-                  <label className="flex-1 py-2.5 px-3 rounded-xl border border-dashed border-slate-700 hover:border-emerald-500 bg-slate-900 text-center cursor-pointer transition-colors">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleImageUpload}
-                      className="hidden"
-                    />
-                    <div className="flex items-center justify-center gap-2 text-xs text-slate-300">
-                      <Upload className="w-4 h-4 text-emerald-400" />
-                      <span>آپلود عکس جدید کالا</span>
-                    </div>
-                  </label>
+                {/* Quick Selection between uploaded Green Screen and White bucket */}
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => setConfig(prev => ({
+                      ...prev,
+                      productImgUrl: GREEN_PRODUCT_IMG,
+                      bgRemoveMode: 'green',
+                      removeBg: true
+                    }))}
+                    className={`py-2 px-2.5 rounded-xl text-[11px] font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                      config.productImgUrl === GREEN_PRODUCT_IMG
+                        ? 'bg-emerald-950/80 border-emerald-500 text-emerald-300 shadow-sm'
+                        : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    <div className="w-3 h-3 rounded-full bg-[#00FF41]" />
+                    <span>سطل با پرده سبز (#00FF41)</span>
+                  </button>
+
+                  <button
+                    onClick={() => setConfig(prev => ({
+                      ...prev,
+                      productImgUrl: WHITE_PRODUCT_IMG,
+                      bgRemoveMode: 'white',
+                      removeBg: true
+                    }))}
+                    className={`py-2 px-2.5 rounded-xl text-[11px] font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                      config.productImgUrl === WHITE_PRODUCT_IMG
+                        ? 'bg-slate-800 border-slate-500 text-slate-200 shadow-sm'
+                        : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    <div className="w-3 h-3 rounded-full bg-white border border-slate-400" />
+                    <span>سطل با زمینه سفید</span>
+                  </button>
                 </div>
+
+                <label className="w-full py-2.5 px-3 rounded-xl border border-dashed border-slate-700 hover:border-emerald-500 bg-slate-900 text-center cursor-pointer transition-colors block">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="hidden"
+                  />
+                  <div className="flex items-center justify-center gap-2 text-xs text-slate-300">
+                    <Upload className="w-4 h-4 text-emerald-400" />
+                    <span>آپلود عکس جدید کالا از گالری</span>
+                  </div>
+                </label>
               </div>
 
-              {/* Automatic White Background Remover Switch */}
+              {/* Advanced Chroma Key & Background Remover Controls */}
               <div className="p-3.5 rounded-xl bg-slate-950/60 border border-slate-800 space-y-3">
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="text-xs font-bold text-white flex items-center gap-1.5">
-                      <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                      <span>حذف هوشمند پس‌زمینه سفید عکس</span>
+                      <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+                      <span>جداسازی خودکار پس‌زمینه (Chroma Key)</span>
                     </div>
                     <div className="text-[11px] text-slate-400 mt-0.5">
-                      جداسازی سطل از زمینه سفید آتلیه‌ای بدون لمس خود ظرف
+                      حذف پرده سبز #00FF41 یا زمینه سفید بدون دست خوردن سطل
                     </div>
                   </div>
                   <input
@@ -337,19 +372,81 @@ ${config.features.map(f => `✔️ ${f}`).join('\n')}
                 </div>
 
                 {config.removeBg && (
-                  <div className="space-y-1.5 pt-2 border-t border-slate-800/80">
-                    <div className="flex justify-between text-[11px] text-slate-400">
-                      <span>حساسیت جداسازی زمینه سفید:</span>
-                      <span className="font-mono text-emerald-400">{config.bgRemoveSensitivity}%</span>
+                  <div className="space-y-3 pt-2 border-t border-slate-800/80">
+                    {/* Mode Selector */}
+                    <div>
+                      <label className="block text-[11px] text-slate-400 mb-1.5">حالت حذف پس‌زمینه:</label>
+                      <div className="grid grid-cols-3 gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => setConfig(prev => ({ ...prev, bgRemoveMode: 'green' }))}
+                          className={`py-1.5 px-2 rounded-lg text-[10px] font-bold border transition-all flex items-center justify-center gap-1 ${
+                            (config.bgRemoveMode === 'green' || !config.bgRemoveMode)
+                              ? 'bg-emerald-600 border-emerald-500 text-white shadow-sm'
+                              : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
+                          }`}
+                        >
+                          <div className="w-2 h-2 rounded-full bg-[#00FF41]" />
+                          <span>پرده سبز (#00FF41)</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setConfig(prev => ({ ...prev, bgRemoveMode: 'white' }))}
+                          className={`py-1.5 px-2 rounded-lg text-[10px] font-bold border transition-all flex items-center justify-center gap-1 ${
+                            config.bgRemoveMode === 'white'
+                              ? 'bg-slate-700 border-slate-500 text-white shadow-sm'
+                              : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
+                          }`}
+                        >
+                          <div className="w-2 h-2 rounded-full bg-white" />
+                          <span>زمینه سفید</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setConfig(prev => ({ ...prev, bgRemoveMode: 'auto' }))}
+                          className={`py-1.5 px-2 rounded-lg text-[10px] font-bold border transition-all flex items-center justify-center gap-1 ${
+                            config.bgRemoveMode === 'auto'
+                              ? 'bg-indigo-600 border-indigo-500 text-white shadow-sm'
+                              : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
+                          }`}
+                        >
+                          <Wand2 className="w-2.5 h-2.5" />
+                          <span>تشخیص خودکار</span>
+                        </button>
+                      </div>
                     </div>
-                    <input
-                      type="range"
-                      min="15"
-                      max="70"
-                      value={config.bgRemoveSensitivity}
-                      onChange={(e) => setConfig(prev => ({ ...prev, bgRemoveSensitivity: Number(e.target.value) }))}
-                      className="w-full accent-emerald-500 cursor-pointer"
-                    />
+
+                    {/* Despill Green Reflection Switch */}
+                    <div className="flex items-center justify-between bg-slate-900/60 p-2 rounded-lg border border-slate-800">
+                      <div>
+                        <div className="text-[11px] font-bold text-slate-200">حذف بازتاب رنگ سبز (Despill)</div>
+                        <div className="text-[9px] text-slate-400">پاک کردن انعکاس سبز پرده از روی لبه‌های سفید سطل</div>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={config.despillGreen !== false}
+                        onChange={(e) => setConfig(prev => ({ ...prev, despillGreen: e.target.checked }))}
+                        className="w-3.5 h-3.5 text-emerald-600 rounded bg-slate-800 border-slate-700 cursor-pointer"
+                      />
+                    </div>
+
+                    {/* Sensitivity Slider */}
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-[11px] text-slate-400">
+                        <span>دقت و حساسیت جداسازی:</span>
+                        <span className="font-mono text-emerald-400">{config.bgRemoveSensitivity}%</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="15"
+                        max="75"
+                        value={config.bgRemoveSensitivity}
+                        onChange={(e) => setConfig(prev => ({ ...prev, bgRemoveSensitivity: Number(e.target.value) }))}
+                        className="w-full accent-emerald-500 cursor-pointer"
+                      />
+                    </div>
                   </div>
                 )}
               </div>

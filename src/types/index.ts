@@ -30,6 +30,9 @@ export interface PosterConfig {
   // Product image
   productImgUrl: string;
   removeBg: boolean;
+  bgRemoveMode?: 'auto' | 'green' | 'white' | 'custom';
+  customKeyColor?: string; // hex like #00FF41
+  despillGreen?: boolean;
   bgRemoveSensitivity: number; // 0 to 100
   productScale: number; // 0.4 to 1.5
   productPosX: number; // 0 to 100 (%)

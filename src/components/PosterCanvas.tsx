@@ -20,13 +20,6 @@ export const PosterCanvas: React.FC<PosterCanvasProps> = ({
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [isRendering, setIsRendering] = useState(true);
   
-  // Cache processed product image data to avoid re-keying background on every small slider change
-  const cachedProcessedImgRef = useRef<{ url: string; sensitivity: number; removeBg: boolean; img: HTMLCanvasElement | HTMLImageElement | null }>({
-    url: '',
-    sensitivity: -1,
-    removeBg: false,
-    img: null
-  });
 
   // Determine canvas width and height based on aspect ratio
   const getCanvasDimensions = useCallback(() => {
@@ -44,17 +37,42 @@ export const PosterCanvas: React.FC<PosterCanvasProps> = ({
     }
   }, [config.aspectRatio]);
 
-  // Process product image (remove white studio background if enabled)
+  // Cache processed product image data to avoid re-keying background on every small slider change
+  const cachedProcessedImgRef = useRef<{
+    url: string;
+    sensitivity: number;
+    removeBg: boolean;
+    mode: string;
+    keyColor: string;
+    despill: boolean;
+    img: HTMLCanvasElement | HTMLImageElement | null;
+  }>({
+    url: '',
+    sensitivity: -1,
+    removeBg: false,
+    mode: '',
+    keyColor: '',
+    despill: true,
+    img: null
+  });
+
+  // Process product image (smart Green Screen Chroma Key or White Studio removal)
   const getProcessedProductImage = useCallback(async (
     imgUrl: string,
     removeBg: boolean,
-    sensitivity: number
+    sensitivity: number,
+    mode: 'auto' | 'green' | 'white' | 'custom' = 'auto',
+    keyColor: string = '#00FF41',
+    despill: boolean = true
   ): Promise<HTMLCanvasElement | HTMLImageElement> => {
     // Check cache
     if (
       cachedProcessedImgRef.current.url === imgUrl &&
       cachedProcessedImgRef.current.removeBg === removeBg &&
       cachedProcessedImgRef.current.sensitivity === sensitivity &&
+      cachedProcessedImgRef.current.mode === mode &&
+      cachedProcessedImgRef.current.keyColor === keyColor &&
+      cachedProcessedImgRef.current.despill === despill &&
       cachedProcessedImgRef.current.img
     ) {
       return cachedProcessedImgRef.current.img;
@@ -69,48 +87,127 @@ export const PosterCanvas: React.FC<PosterCanvasProps> = ({
     });
 
     if (!removeBg) {
-      cachedProcessedImgRef.current = { url: imgUrl, removeBg, sensitivity, img: rawImg };
+      cachedProcessedImgRef.current = {
+        url: imgUrl,
+        removeBg,
+        sensitivity,
+        mode,
+        keyColor,
+        despill,
+        img: rawImg
+      };
       return rawImg;
     }
 
-    // Process on offscreen canvas to remove white background with edge preservation
     const offCanvas = document.createElement('canvas');
-    offCanvas.width = rawImg.naturalWidth || rawImg.naturalHeight; // Using width/height or natural
-    offCanvas.height = rawImg.naturalHeight || rawImg.naturalWidth;
-    offCanvas.width = rawImg.naturalWidth;
-    offCanvas.height = rawImg.naturalHeight;
+    offCanvas.width = rawImg.naturalWidth || rawImg.width;
+    offCanvas.height = rawImg.naturalHeight || rawImg.height;
     const ctx = offCanvas.getContext('2d', { willReadFrequently: true });
     if (!ctx) return rawImg;
 
     ctx.drawImage(rawImg, 0, 0);
     const imgData = ctx.getImageData(0, 0, offCanvas.width, offCanvas.height);
     const data = imgData.data;
+    const w = offCanvas.width;
+    const h = offCanvas.height;
 
-    // Much higher default threshold (less aggressive)
-    // Dark pixels protection: If pixel is 'dark enough', keep it, regardless of brightness.
-    // The user mentioned text was being erased, which is dark.
-    const darknessThreshold = 100; // Protection for text/labels
+    // 1. Analyze 4 corner samples to determine background type
+    let cornerR = 0, cornerG = 0, cornerB = 0, cornerCount = 0;
+    const sampleCoords = [
+      [2, 2], [w - 3, 2], [2, h - 3], [w - 3, h - 3],
+      [10, 10], [w - 11, 10], [10, h - 11], [w - 11, h - 11]
+    ];
+    for (const [sx, sy] of sampleCoords) {
+      if (sx >= 0 && sx < w && sy >= 0 && sy < h) {
+        const idx = (sy * w + sx) * 4;
+        cornerR += data[idx];
+        cornerG += data[idx + 1];
+        cornerB += data[idx + 2];
+        cornerCount++;
+      }
+    }
+    cornerR = cornerR / cornerCount;
+    cornerG = cornerG / cornerCount;
+    cornerB = cornerB / cornerCount;
 
-    for (let i = 0; i < data.length; i += 4) {
-      const r = data[i];
-      const g = data[i + 1];
-      const b = data[i + 2];
-      
-      const darkness = (r + g + b) / 3;
+    // Detect if background is green screen or white
+    let activeMode = mode;
+    if (activeMode === 'auto') {
+      const isCornerGreen = cornerG > 120 && cornerG > (cornerR * 1.3) && cornerG > (cornerB * 1.3);
+      const isCornerWhite = cornerR > 200 && cornerG > 200 && cornerB > 200 && Math.abs(cornerR - cornerB) < 30;
+      if (isCornerGreen) {
+        activeMode = 'green';
+      } else if (isCornerWhite) {
+        activeMode = 'white';
+      } else {
+        activeMode = 'green'; // Default to green screen
+      }
+    }
 
-      // If it's dark, keep it! (This protects the green/black text)
-      if (darkness < darknessThreshold) continue;
+    // 2. Chroma Key Green Screen Removal
+    if (activeMode === 'green') {
+      // Green dominance: how much greener is the pixel compared to red and blue
+      // Slider sensitivity 10 to 90 (default ~38)
+      const threshold = Math.max(12, 70 - Math.round(sensitivity * 0.75));
+      const feather = 20;
 
-      // Only remove if it's very bright (background)
-      const threshold = 235 + (sensitivity / 5); // 235-255 range
+      for (let i = 0; i < data.length; i += 4) {
+        const r = data[i];
+        const g = data[i + 1];
+        const b = data[i + 2];
 
-      if (r > threshold && g > threshold && b > threshold) {
-        data[i + 3] = 0; // Transparent
+        // Green Screen check
+        const maxRB = Math.max(r, b);
+        const greenExcess = g - maxRB;
+
+        if (greenExcess > threshold && g > 75) {
+          if (greenExcess >= (threshold + feather)) {
+            data[i + 3] = 0; // Completely transparent
+          } else {
+            // Soft feathering on the edge
+            const alphaFactor = (threshold + feather - greenExcess) / feather;
+            data[i + 3] = Math.round(data[i + 3] * Math.min(1, Math.max(0, alphaFactor)));
+          }
+        } else if (despill && g > maxRB) {
+          // Green spill suppression: removes neon green bounce from white plastic bucket rims
+          data[i + 1] = Math.round((r + b) / 2);
+        }
+      }
+    } else if (activeMode === 'white') {
+      // 3. White Studio Background Removal
+      const threshold = Math.max(180, 255 - Math.round(sensitivity * 0.8));
+      const feather = 18;
+
+      for (let i = 0; i < data.length; i += 4) {
+        const r = data[i];
+        const g = data[i + 1];
+        const b = data[i + 2];
+
+        const minVal = Math.min(r, g, b);
+        const maxVal = Math.max(r, g, b);
+        const isNeutral = (maxVal - minVal) < 22; // Neutral grey / white
+
+        if (isNeutral && minVal > (threshold - feather)) {
+          if (minVal >= threshold) {
+            data[i + 3] = 0;
+          } else {
+            const alphaFactor = (threshold - minVal) / feather;
+            data[i + 3] = Math.round(data[i + 3] * Math.min(1, Math.max(0, alphaFactor)));
+          }
+        }
       }
     }
 
     ctx.putImageData(imgData, 0, 0);
-    cachedProcessedImgRef.current = { url: imgUrl, removeBg, sensitivity, img: offCanvas };
+    cachedProcessedImgRef.current = {
+      url: imgUrl,
+      removeBg,
+      sensitivity,
+      mode,
+      keyColor,
+      despill,
+      img: offCanvas
+    };
     return offCanvas;
   }, []);
 
@@ -231,7 +328,10 @@ export const PosterCanvas: React.FC<PosterCanvasProps> = ({
       const productAsset = await getProcessedProductImage(
         config.productImgUrl,
         config.removeBg,
-        config.bgRemoveSensitivity
+        config.bgRemoveSensitivity,
+        config.bgRemoveMode || 'auto',
+        config.customKeyColor || '#00FF41',
+        config.despillGreen !== false
       );
 
       const pNaturalWidth = 'naturalWidth' in productAsset ? productAsset.naturalWidth : productAsset.width;

@@ -5,7 +5,9 @@
 
 import { PosterConfig } from '../types';
 
-export const DEFAULT_PRODUCT_IMG = '/assets/aistudio/IMG_20261104_175024_313_84b08693.jpg';
+export const DEFAULT_PRODUCT_IMG = '/assets/aistudio/pishgaman_tiger_greenscreen.png';
+export const WHITE_PRODUCT_IMG = '/assets/aistudio/IMG_20261104_175024_313_84b08693.jpg';
+export const GREEN_PRODUCT_IMG = '/assets/aistudio/pishgaman_tiger_greenscreen.png';
 
 export const POSTER_TEMPLATES: PosterConfig[] = [
   {
