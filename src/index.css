@@ -1,0 +1,10 @@
+@import "tailwindcss";
+
+body {
+  font-family: 'Vazirmatn', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  direction: rtl;
+  text-align: right;
+  background-color: #0b0f19;
+  color: #f1f5f9;
+  min-height: 100vh;
+}
