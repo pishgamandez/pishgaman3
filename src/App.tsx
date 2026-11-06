@@ -135,6 +135,18 @@ export default function App() {
               <MessageSquare className="w-4 h-4" />
               <span>تولید متن تبلیغاتی و کپشن</span>
             </button>
+
+            <button
+              onClick={() => setActiveTab('researcher')}
+              className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all shrink-0 cursor-pointer ${
+                activeTab === 'researcher'
+                  ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/30 border border-emerald-500'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+              }`}
+            >
+              <Wand2 className="w-4 h-4" />
+              <span>تحقیق‌گر هوشمند محصولات جدید</span>
+            </button>
           </div>
         </div>
       </div>
@@ -160,6 +172,10 @@ export default function App() {
 
         {activeTab === 'copywriter' && (
           <CopywriterTool />
+        )}
+
+        {activeTab === 'researcher' && (
+          <AutoResearcher />
         )}
       </main>
 

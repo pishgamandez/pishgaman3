@@ -162,6 +162,32 @@ ${config.features.map(f => `✔️ ${f}`).join('\n')}
         ))}
       </div>
 
+      {/* Recommended Green Screen Color Code Banner */}
+      <div className="bg-emerald-950/40 border border-emerald-500/30 rounded-2xl p-3.5 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-lg">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-xl bg-[#00FF41] shadow-md shadow-[#00FF41]/30 border border-white/20 shrink-0" />
+          <div>
+            <div className="text-xs font-bold text-white flex items-center gap-2">
+              <span>کد رنگ پیشنهادی برای پس‌زمینه عکاسی محصولات (Green Screen):</span>
+              <span className="font-mono text-emerald-300 font-extrabold bg-slate-900 px-2 py-0.5 rounded border border-emerald-500/40 select-all">#00FF41</span>
+            </div>
+            <div className="text-[11px] text-slate-400 mt-0.5">
+              اگر محصولتان را روی پرده یا کاغذی با این رنگ عکاسی کنید، سیستم به شکل خودکار و با دقت ۱۰۰٪ آن را بدون هیچ هاله یا محوشدگی جدا می‌کند.
+            </div>
+          </div>
+        </div>
+        <button
+          onClick={() => {
+            navigator.clipboard.writeText('#00FF41');
+            alert?.('#00FF41 کپی شد');
+          }}
+          className="shrink-0 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-emerald-500/40 text-emerald-300 font-mono text-xs flex items-center gap-1.5 cursor-pointer transition-colors"
+        >
+          <Copy className="w-3.5 h-3.5" />
+          <span>کپی کد رنگ #00FF41</span>
+        </button>
+      </div>
+
       {/* Main Studio Grid: Left Canvas, Right Controls */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Left: High-Res Interactive Canvas Display */}
